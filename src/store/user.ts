@@ -228,7 +228,7 @@ export interface BillRecord {
 export const useUserStore = defineStore('happy_holdem_user', {
   state: () => ({
     nickname: '达文西',
-    avatar: 'assets/characters/player_hero.png',
+    avatar: 'assets/characters/player_hero.webp',
     beans: 50000, // 初始赠送 50,000 欢乐豆
     totalGames: 0,
     winGames: 0,

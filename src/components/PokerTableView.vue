@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useGameStore, TablePlayer } from '@/store/game'
 import { useUserStore } from '@/store/user'
@@ -9,7 +9,9 @@ import { resolvePublicAsset } from '@/core/assets'
 import PlayingCard from './PlayingCard.vue'
 import PixiTableCanvas from './PixiTableCanvas.vue'
 import ArcadeVfxOverlay from './ArcadeVfxOverlay.vue'
-import LobbyModals, { ModalType } from './LobbyModals.vue'
+import type { ModalType } from './LobbyModals.vue'
+
+const LobbyModals = defineAsyncComponent(() => import('./LobbyModals.vue'))
 
 const props = defineProps<{
   compact?: boolean
@@ -24,6 +26,12 @@ const gameStore = useGameStore()
 const userStore = useUserStore()
 
 const activeModal = ref<ModalType>('none')
+const modalsMounted = ref(false)
+watch(activeModal, (val) => {
+  if (val !== 'none') {
+    modalsMounted.value = true
+  }
+})
 const selectedSeatForProp = ref<number | null>(null)
 const customRaiseExtra = ref<number>(200)
 const isEditingRaiseInput = ref(false)
@@ -423,10 +431,10 @@ const humanNetProfit = computed(() => {
 })
 
 const CHIP_DENOM_ASSETS = [
-  { d: 5000, src: resolvePublicAsset('assets/chips/chip_5000.png') },
-  { d: 1000, src: resolvePublicAsset('assets/chips/chip_1000.png') },
-  { d: 500, src: resolvePublicAsset('assets/chips/chip_500.png') },
-  { d: 100, src: resolvePublicAsset('assets/chips/chip_100.png') },
+  { d: 5000, src: resolvePublicAsset('assets/chips/chip_5000.webp') },
+  { d: 1000, src: resolvePublicAsset('assets/chips/chip_1000.webp') },
+  { d: 500, src: resolvePublicAsset('assets/chips/chip_500.webp') },
+  { d: 100, src: resolvePublicAsset('assets/chips/chip_100.webp') },
 ] as const
 
 // 将任意筹码金额拆解为用于 UI 展示的真实筹码图片列表（100 / 500 / 1000 / 5000，最多展示 5 枚代表性筹码）
@@ -901,6 +909,7 @@ onUnmounted(() => {
                     <img
                       :src="chipItem.src"
                       :alt="`${chipItem.denom}`"
+                      decoding="async"
                       class="w-full h-full object-cover scale-[1.09] rounded-full"
                     />
                   </div>
@@ -1213,6 +1222,7 @@ onUnmounted(() => {
             <img
               :src="ai.avatar"
               :alt="ai.name"
+              decoding="async"
               class="rounded-xl object-cover border border-amber-300 group-hover:scale-105 transition"
               :class="isCompact ? 'w-10 h-10' : 'w-16 h-16 rounded-2xl border-2'"
             />
@@ -1401,6 +1411,7 @@ onUnmounted(() => {
                 <img
                   :src="cItem.src"
                   :alt="`${cItem.denom}`"
+                  decoding="async"
                   class="w-full h-full object-cover scale-[1.09] rounded-full"
                 />
               </div>
@@ -1466,6 +1477,7 @@ onUnmounted(() => {
           <img
             :src="humanPlayer.avatar"
             alt="达文西"
+            decoding="async"
             class="rounded-xl object-cover border-2"
             :class="[
               isCompact ? 'w-10 h-10' : 'w-16 h-16 rounded-2xl border-2',
@@ -1562,6 +1574,7 @@ onUnmounted(() => {
               <img
                 :src="cItem.src"
                 :alt="`${cItem.denom}`"
+                decoding="async"
                 class="w-full h-full object-cover scale-[1.09] rounded-full"
               />
             </div>
@@ -2026,7 +2039,7 @@ onUnmounted(() => {
     </Transition>
 
     <!-- 弹窗组件 (支持在牌桌内直接打开账单流水、转盘、破产救济与规则) -->
-    <LobbyModals :active-modal="activeModal" @close="activeModal = 'none'" />
+    <LobbyModals v-if="modalsMounted" :active-modal="activeModal" @close="activeModal = 'none'" />
   </div>
 </template>
 

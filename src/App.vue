@@ -1,11 +1,60 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, h, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import LobbyView from '@/components/LobbyView.vue'
-import PokerTableView from '@/components/PokerTableView.vue'
 import { useGameStore } from '@/store/game'
 import { RoomConfig, useUserStore } from '@/store/user'
 import { sound } from '@/core/sound'
+import { resolvePublicAsset } from '@/core/assets'
+
+const loadPokerTableView = () => import('@/components/PokerTableView.vue')
+
+const TableLoadingFallback = {
+  render() {
+    return h(
+      'div',
+      {
+        class:
+          'w-full h-full flex flex-col items-center justify-center gap-3 bg-slate-950 text-slate-400 text-xs select-none',
+      },
+      [
+        h('div', {
+          class:
+            'w-7 h-7 rounded-full border-2 border-slate-700 border-t-slate-200 animate-spin',
+        }),
+        h('span', '正在加载界面...'),
+      ]
+    )
+  },
+}
+
+const PokerTableView = defineAsyncComponent({
+  loader: loadPokerTableView,
+  loadingComponent: TableLoadingFallback,
+  delay: 150,
+})
+
+let idlePreloadId: number | null = null
+let idlePreloadTimer: number | null = null
+let hasPreloadedAssets = false
+
+function preloadIdleAssets() {
+  if (hasPreloadedAssets) return
+  hasPreloadedAssets = true
+  void loadPokerTableView()
+  void import('@/components/LobbyModals.vue')
+  const chipPaths = [
+    'assets/chips/chip_100.webp',
+    'assets/chips/chip_500.webp',
+    'assets/chips/chip_1000.webp',
+    'assets/chips/chip_5000.webp',
+  ]
+  for (const path of chipPaths) {
+    const img = new Image()
+    img.decoding = 'async'
+    img.src = resolvePublicAsset(path)
+  }
+}
 
 const currentView = ref<'lobby' | 'table'>('lobby')
 const gameStore = useGameStore()
@@ -134,6 +183,14 @@ onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
   window.addEventListener('mousedown', handleGlobalMousedown)
   document.documentElement.addEventListener('mouseleave', handleDocumentMouseLeave)
+  const win = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+  }
+  if (typeof win.requestIdleCallback === 'function') {
+    idlePreloadId = win.requestIdleCallback(preloadIdleAssets, { timeout: 2000 })
+  } else {
+    idlePreloadTimer = window.setTimeout(preloadIdleAssets, 1200)
+  }
 })
 
 onUnmounted(() => {
@@ -141,6 +198,17 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('mousedown', handleGlobalMousedown)
   document.documentElement.removeEventListener('mouseleave', handleDocumentMouseLeave)
+  const win = window as Window & {
+    cancelIdleCallback?: (id: number) => void
+  }
+  if (idlePreloadId !== null && typeof win.cancelIdleCallback === 'function') {
+    win.cancelIdleCallback(idlePreloadId)
+    idlePreloadId = null
+  }
+  if (idlePreloadTimer !== null) {
+    clearTimeout(idlePreloadTimer)
+    idlePreloadTimer = null
+  }
 })
 
 function handleEnterRoom(room: RoomConfig) {

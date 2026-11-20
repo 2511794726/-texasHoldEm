@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useUserStore, ROOM_CONFIGS, RoomConfig, ACHIEVEMENTS } from '@/store/user'
 import { AI_PERSONAS } from '@/core/ai'
 import { sound } from '@/core/sound'
 import { formatChips } from '@/core/format'
 import { resolvePublicAsset } from '@/core/assets'
-import LobbyModals, { ModalType } from './LobbyModals.vue'
+import type { ModalType } from './LobbyModals.vue'
 
-const dealerAvatar = resolvePublicAsset('assets/characters/dealer_girl.png')
+const LobbyModals = defineAsyncComponent(() => import('./LobbyModals.vue'))
+const dealerAvatar = resolvePublicAsset('assets/characters/dealer_girl.webp')
 
 const props = defineProps<{
   compact?: boolean
@@ -21,6 +22,12 @@ const emit = defineEmits<{
 
 const userStore = useUserStore()
 const activeModal = ref<ModalType>('none')
+const modalsMounted = ref(false)
+watch(activeModal, (val) => {
+  if (val !== 'none') {
+    modalsMounted.value = true
+  }
+})
 const soundOn = ref(sound.enabled)
 const bgmOn = ref(sound.bgmEnabled)
 const lobbyAlert = ref('')
@@ -109,6 +116,7 @@ function quickStartGame() {
           <img
             :src="resolvePublicAsset(userStore.avatar)"
             alt="达文西"
+            decoding="async"
             class="rounded-xl object-cover border-2 border-amber-300 shadow shrink-0"
             :class="isCompact ? 'w-9 h-9' : 'w-12 h-12'"
           />
@@ -310,6 +318,8 @@ function quickStartGame() {
           <img
             :src="dealerAvatar"
             alt="紫灵仙子"
+            decoding="async"
+            fetchpriority="high"
             class="relative w-44 h-44 lg:w-52 lg:h-52 rounded-3xl object-cover border-2 border-rose-200/80 shadow-[0_15px_40px_rgba(12,10,30,0.8)] animate-float"
           />
           <div
@@ -338,6 +348,7 @@ function quickStartGame() {
               <img
                 :src="ai.avatar"
                 :alt="ai.name"
+                decoding="async"
                 class="w-9 h-9 rounded-xl object-cover border border-rose-200/50 group-hover:scale-110 group-hover:border-amber-300 transition shadow"
               />
               <div
@@ -530,6 +541,6 @@ function quickStartGame() {
     </footer>
 
     <!-- 弹窗组件 -->
-    <LobbyModals :active-modal="activeModal" @close="activeModal = 'none'" />
+    <LobbyModals v-if="modalsMounted" :active-modal="activeModal" @close="activeModal = 'none'" />
   </div>
 </template>

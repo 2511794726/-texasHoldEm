@@ -22,10 +22,10 @@ let auraPhase = 0
 export type ChipDenom = 100 | 500 | 1000 | 5000
 
 const CHIP_ASSET_MAP: Record<ChipDenom, string> = {
-  100: resolvePublicAsset('assets/chips/chip_100.png'),
-  500: resolvePublicAsset('assets/chips/chip_500.png'),
-  1000: resolvePublicAsset('assets/chips/chip_1000.png'),
-  5000: resolvePublicAsset('assets/chips/chip_5000.png'),
+  100: resolvePublicAsset('assets/chips/chip_100.webp'),
+  500: resolvePublicAsset('assets/chips/chip_500.webp'),
+  1000: resolvePublicAsset('assets/chips/chip_1000.webp'),
+  5000: resolvePublicAsset('assets/chips/chip_5000.webp'),
 }
 
 const CHIP_COLOR_MAP: Record<ChipDenom, number> = {
